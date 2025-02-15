@@ -350,10 +350,10 @@ postForm.addEventListener("submit", async function (event) {
   document.getElementById("image").value = "";
 });
 
-// 📌 글 작성 HTML 추가
+// 📌 게시글을 동적으로 생성하는 함수 (개선된 디자인 적용)
 function createPostElement(post) {
   const postDiv = document.createElement("div");
-  postDiv.classList.add("post");
+  postDiv.classList.add("post-card"); // 게시글 카드 스타일 적용
 
   const createdDate = new Date(post.created_at).toLocaleString("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -363,58 +363,35 @@ function createPostElement(post) {
         timeZone: "Asia/Seoul",
       })
     : null;
-
-  // 📌 `updated_at`이 `created_at`과 같으면 수정되지 않은 것으로 간주
   const isUpdated = post.updated_at && post.updated_at !== post.created_at;
 
-  let dateText = "";
-  if (isUpdated) {
-    // 수정된 경우 → 수정 날짜만 표시
-    dateText = `<div class="post-updated">✏ 수정: ${updatedDate}</div>`;
-  } else {
-    // 처음 작성된 경우 → 작성 날짜만 표시
-    dateText = `<div class="post-date">📅 작성: ${createdDate}</div>`;
-  }
+  let dateText = isUpdated
+    ? `<div class="post-updated">✏ 수정됨: ${updatedDate}</div>`
+    : `<div class="post-date">📅 작성일: ${createdDate}</div>`;
 
   let imageTag = post.image_url
-    ? `<div class="post-image"><img src="${post.image_url}" id="current-image-${post.id}" style="max-width:100%;"></div>`
-    : "";
-
-  let imageUploadInput = `
-  <input type="file" id="edit-image-${post.id}" accept="image/*">
-`;
-
-  let deleteImageButton = post.image_url
-    ? `<button onclick="deleteImage('${post.id}')">🗑 이미지 삭제</button>`
+    ? `<div class="post-image"><img src="${post.image_url}" alt="게시물 이미지"></div>`
     : "";
 
   postDiv.innerHTML = `
-  <div id="view-mode-${post.id}">
-      <div class="post-title">${post.title}</div>
-      ${dateText}
-      ${imageTag}
-      <div class="post-content">${post.content}</div>
-      <button onclick="enableEditMode('${post.id}', '${post.title}', '${post.content}')">✏ 수정</button>
-      <button onclick="deletePost('${post.id}')">🗑 삭제</button>
-  </div>
+    <div class="post-content">
+        ${imageTag}
+        <h3 class="post-title">${post.title}</h3>
+        <p class="post-text">${post.content}</p>
+        ${dateText}
+        <div class="post-actions">
+            <button class="edit-btn" onclick="enableEditMode('${post.id}')">✏ 수정</button>
+            <button class="delete-btn" onclick="deletePost('${post.id}')">🗑 삭제</button>
+        </div>
+    </div>
+    <div class="comments-section">
+        <input type="text" id="comment-input-${post.id}" class="comment-input" placeholder="댓글을 입력하세요">
+        <button class="comment-btn" onclick="addComment('${post.id}')">💬 댓글 작성</button>
+        <div class="comments" id="comments-${post.id}"></div>
+    </div>
+  `;
 
-  <div id="edit-mode-${post.id}" style="display: none;">
-      <input type="text" id="edit-title-${post.id}" value="${post.title}">
-      <textarea id="edit-content-${post.id}">${post.content}</textarea>
-      ${imageTag}  <!-- 기존 이미지 표시 -->
-      ${imageUploadInput}  <!-- 새 이미지 업로드 -->
-      ${deleteImageButton}  <!-- 이미지 삭제 버튼 -->
-      <button onclick="updatePost('${post.id}')">💾 저장</button>
-      <button onclick="disableEditMode('${post.id}')">❌ 취소</button>
-  </div>
-
-  <div class="comments" id="comments-${post.id}"></div>
-  <input type="text" id="comment-input-${post.id}" placeholder="댓글 입력..." />
-  <button onclick="addComment('${post.id}')">댓글 작성</button>
-`;
   postList.appendChild(postDiv);
-
-  // 📌 댓글 불러오기
   loadComments(post.id);
 }
 
@@ -435,36 +412,31 @@ async function loadComments(board_id) {
           timeZone: "Asia/Seoul",
         })
       : null;
-
-    // 📌 `updated_at`이 `created_at`과 같으면 수정되지 않은 것으로 간주
     const isUpdated =
       comment.updated_at && comment.updated_at !== comment.created_at;
 
-    let dateText = "";
-    if (isUpdated) {
-      // 수정된 경우 → 수정 날짜만 표시
-      dateText = `<div class="comment-updated">✏ 수정: ${updatedDate}</div>`;
-    } else {
-      // 처음 작성된 경우 → 작성 날짜만 표시
-      dateText = `<div class="comment-date">📅 작성: ${createdDate}</div>`;
-    }
+    let dateText = isUpdated
+      ? `<div class="comment-updated">✏ 수정: ${updatedDate}</div>`
+      : `<div class="comment-date">📅 작성: ${createdDate}</div>`;
 
     const commentElement = document.createElement("div");
-    commentElement.classList.add("comment");
+    commentElement.classList.add("comment-box");
     commentElement.innerHTML = `
-            <div id="view-comment-${comment.id}">
-                <div class="comment-content">${comment.content}</div>
-                ${dateText}
-                <button onclick="enableCommentEditMode('${comment.id}', '${comment.content}')">✏ 수정</button>
-                <button onclick="deleteComment('${comment.id}', '${board_id}')">🗑 삭제</button>
-            </div>
+      <div id="view-comment-${comment.id}">
+          <p class="comment-content">${comment.content}</p>
+          ${dateText}
+          <div class="comment-actions">
+              <button class="edit-btn" onclick="enableCommentEditMode('${comment.id}', '${comment.content}')">✏ 수정</button>
+              <button class="delete-btn" onclick="deleteComment('${comment.id}', '${board_id}')">🗑 삭제</button>
+          </div>
+      </div>
 
-            <div id="edit-comment-mode-${comment.id}" style="display: none;">
-                <input type="text" id="edit-comment-${comment.id}" value="${comment.content}">
-                <button onclick="updateComment('${comment.id}', '${board_id}')">💾 저장</button>
-                <button onclick="disableCommentEditMode('${comment.id}')">❌ 취소</button>
-            </div>
-        `;
+      <div id="edit-comment-mode-${comment.id}" style="display: none;">
+          <input type="text" id="edit-comment-${comment.id}" class="comment-edit-input" value="${comment.content}">
+          <button class="save-btn" onclick="updateComment('${comment.id}', '${board_id}')">💾 저장</button>
+          <button class="cancel-btn" onclick="disableCommentEditMode('${comment.id}')">❌ 취소</button>
+      </div>
+    `;
     commentsDiv.appendChild(commentElement);
   });
 }

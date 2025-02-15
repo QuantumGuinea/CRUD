@@ -67,12 +67,14 @@ app.get("/auth/logout", async (req, res) => {
   res.json({ message: "로그아웃 성공" });
 });
 
+// CRUD
+
 // 📌 모든 게시글 가져오기
 app.get("/posts", async (req, res) => {
   const { data, error } = await supabase
-    .from("board")
+    .from("board") // board: 수퍼베이스 상에서의 게시물을 쌓는 데이터 테이블
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }); // 게시물에서 데이터가 쌓이는 timestamp
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
@@ -80,17 +82,17 @@ app.get("/posts", async (req, res) => {
 
 // 📌 새 게시글 추가
 app.post("/posts", async (req, res) => {
-  const { title, content, image_url, user_id } = req.body;
+  const { title, content, image_url, user_id } = req.body; // board에 있는 컬럼명
 
   if (!title || !content)
     return res.status(400).json({ error: "제목과 내용을 입력하세요." });
 
   if (!user_id) return res.status(401).json({ error: "로그인이 필요합니다." });
 
-  // ✅ Supabase 요청 시 user_id 포함
+  // ✅ Supabase 요청 시
   const { data, error } = await supabase
     .from("board")
-    .insert([{ title, content, image_url, user_id }]);
+    .insert([{ title, content, image_url, user_id }]); // 게시글이 board에 추가됨
 
   if (error) {
     console.error("🛑 Supabase INSERT 오류:", error);
