@@ -12,7 +12,7 @@ const port = process.env.PORT || 3000;
 // ✅ PATCH 메서드 추가
 app.use(
   cors({
-    origin: "https://quantumguinea.github.io/CRUD/", // ✅ 클라이언트 URL 허용
+    origin: "http://127.0.0.1:5500", // ✅ 클라이언트 URL 허용
     credentials: true, // ✅ 인증 요청 허용
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], // ✅ PATCH 포함
     allowedHeaders: ["Content-Type", "Authorization"], // ✅ Authorization 추가
@@ -43,7 +43,7 @@ app.get("/auth/:provider", async (req, res) => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: provider,
     options: {
-      redirectTo: "https://quantumguinea.github.io/CRUD/", // ✅ 로그인 후 돌아올 URL
+      redirectTo: "http://127.0.0.1:5500/tmp/index.html", // ✅ 로그인 후 돌아올 URL
     },
   });
 
