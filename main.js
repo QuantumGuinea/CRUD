@@ -350,10 +350,9 @@ postForm.addEventListener("submit", async function (event) {
   document.getElementById("image").value = "";
 });
 
-// 📌 게시글을 동적으로 생성하는 함수 (개선된 디자인 적용)
 function createPostElement(post) {
   const postDiv = document.createElement("div");
-  postDiv.classList.add("post-card"); // 게시글 카드 스타일 적용
+  postDiv.classList.add("post-card");
 
   const createdDate = new Date(post.created_at).toLocaleString("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -370,11 +369,11 @@ function createPostElement(post) {
     : `<div class="post-date">📅 작성일: ${createdDate}</div>`;
 
   let imageTag = post.image_url
-    ? `<div class="post-image"><img src="${post.image_url}" alt="게시물 이미지"></div>`
+    ? `<div class="post-image"><img id="current-image-${post.id}" src="${post.image_url}" alt="게시물 이미지"></div>`
     : "";
 
   postDiv.innerHTML = `
-    <div class="post-content">
+    <div id="view-mode-${post.id}" class="post-content">
         ${imageTag}
         <h3 class="post-title">${post.title}</h3>
         <p class="post-text">${post.content}</p>
@@ -384,6 +383,24 @@ function createPostElement(post) {
             <button class="delete-btn" onclick="deletePost('${post.id}')">🗑 삭제</button>
         </div>
     </div>
+
+    <!-- 수정 모드 -->
+    <div id="edit-mode-${post.id}" class="edit-post" style="display: none;">
+        <input type="text" id="edit-title-${post.id}" class="input-field" value="${post.title}">
+        <textarea id="edit-content-${post.id}" class="input-field" rows="4">${post.content}</textarea>
+
+        <!-- 기존 이미지 표시 -->
+        ${imageTag}
+
+        <!-- 이미지 업로드 -->
+        <input type="file" id="edit-image-${post.id}" class="file-upload">
+        
+        <div class="post-actions">
+            <button class="save-btn" onclick="updatePost('${post.id}')">💾 저장</button>
+            <button class="cancel-btn" onclick="disableEditMode('${post.id}')">❌ 취소</button>
+        </div>
+    </div>
+
     <div class="comments-section">
         <input type="text" id="comment-input-${post.id}" class="comment-input" placeholder="댓글을 입력하세요">
         <button class="comment-btn" onclick="addComment('${post.id}')">💬 댓글 작성</button>
