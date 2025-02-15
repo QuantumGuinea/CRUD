@@ -262,25 +262,6 @@ async function deletePost(postId) {
   }
 }
 
-// 📌 특정 게시글의 댓글 불러오기
-async function loadComments(board_id) {
-  const response = await fetch(`${API_URL}/comments?board_id=${board_id}`);
-  const comments = await response.json();
-
-  const commentsDiv = document.getElementById(`comments-${board_id}`);
-  commentsDiv.innerHTML = ""; // 기존 댓글 초기화
-
-  comments.forEach((comment) => {
-    const commentElement = document.createElement("div");
-    commentElement.classList.add("comment");
-    commentElement.innerHTML = `
-            <div class="comment-content">${comment.content}</div>
-            <button onclick="deleteComment('${comment.id}', '${board_id}')">삭제</button>
-        `;
-    commentsDiv.appendChild(commentElement);
-  });
-}
-
 // 📌 댓글 추가하기
 async function addComment(board_id) {
   const user_id = await checkAuth(); // ✅ 로그인 체크
