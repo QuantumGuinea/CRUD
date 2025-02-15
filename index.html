@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Supabase 커뮤니티 게시판</title>
+    <!-- Supabase JavaScript SDK 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script defer src="main.js"></script>
+    <!-- main.js는 이 아래에 있어야 함 -->
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: auto;
+        padding: 20px;
+      }
+      h1 {
+        text-align: center;
+      }
+      form {
+        margin-bottom: 20px;
+      }
+      input,
+      textarea,
+      button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+      }
+      .post {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      .post-title {
+        font-weight: bold;
+      }
+      .post-date {
+        font-size: 0.8em;
+        color: gray;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Supabase 커뮤니티 게시판</h1>
+
+    <button id="login-github">GitHub 로그인</button>
+    <button id="login-google">Google 로그인</button>
+    <button id="logout" style="display: none">로그아웃</button>
+
+    <!-- 글 작성 폼 -->
+    <form id="postForm">
+      <input type="text" id="title" placeholder="제목을 입력하세요" required />
+      <textarea
+        id="content"
+        rows="4"
+        placeholder="내용을 입력하세요"
+        required
+      ></textarea>
+      <input type="file" id="image" />
+      <!-- 📌 이미지 업로드 추가 -->
+      <button type="submit">글 작성</button>
+    </form>
+
+    <!-- 게시글 목록 -->
+    <div id="postList"></div>
+  </body>
+</html>
