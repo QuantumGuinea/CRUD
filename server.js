@@ -43,7 +43,7 @@ app.get("/auth/:provider", async (req, res) => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: provider,
     options: {
-      redirectTo: "http://127.0.0.1:5500/tmp/index.html", // ✅ 로그인 후 돌아올 URL
+      redirectTo: "http://127.0.0.1:5500/tmp/docs/index.html", // ✅ 로그인 후 돌아올 URL
     },
   });
 
