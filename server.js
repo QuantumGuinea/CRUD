@@ -80,15 +80,23 @@ app.get("/posts", async (req, res) => {
 
 // 📌 새 게시글 추가
 app.post("/posts", async (req, res) => {
-  const { title, content, image_url } = req.body;
+  const { title, content, image_url, user_id } = req.body;
+
   if (!title || !content)
     return res.status(400).json({ error: "제목과 내용을 입력하세요." });
 
+  if (!user_id) return res.status(401).json({ error: "로그인이 필요합니다." });
+
+  // ✅ Supabase 요청 시 user_id 포함
   const { data, error } = await supabase
     .from("board")
-    .insert([{ title, content, image_url }]);
+    .insert([{ title, content, image_url, user_id }]);
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error("🛑 Supabase INSERT 오류:", error);
+    return res.status(500).json({ error: error.message });
+  }
+
   res.json(data);
 });
 

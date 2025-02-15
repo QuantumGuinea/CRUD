@@ -125,6 +125,15 @@ document
   .querySelector("#logout")
   .addEventListener("click", signOutAndClearSession);
 
+async function checkAuth() {
+  const { data: sessionData, error } = await supabase.auth.getSession();
+  if (error || !sessionData?.session) {
+    alert("로그인이 필요합니다!");
+    return null;
+  }
+  return sessionData.session.user.id;
+}
+
 // 📌 서버에서 게시글 불러오기
 async function loadPosts() {
   const response = await fetch(`${API_URL}/posts`);
@@ -154,46 +163,55 @@ async function convertToBase64(file) {
 async function savePost(title, content, imageFile) {
   let imageUrl = null;
 
+  // ✅ 현재 로그인된 사용자 정보 가져오기
+  const { data: sessionData, error } = await supabase.auth.getSession();
+
+  if (error || !sessionData?.session) {
+    alert("로그인이 필요합니다!");
+    return;
+  }
+
+  const access_token = sessionData.session.access_token;
+  const user_id = sessionData.session.user.id; // ✅ user_id 가져오기
+
   if (imageFile) {
-    imageUrl = await convertToBase64(imageFile); // 📌 이미지를 base64로 변환
+    imageUrl = await convertToBase64(imageFile);
   }
 
   const response = await fetch(`${API_URL}/posts`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, content, image_url: imageUrl }),
-    mode: "cors",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${access_token}`, // ✅ Authorization 헤더 추가
+    },
+    body: JSON.stringify({ title, content, image_url: imageUrl, user_id }),
   });
+
+  const responseData = await response.json();
+  console.log("📌 API 응답:", responseData); // ✅ API 응답 확인
 
   if (response.ok) {
     loadPosts();
   } else {
-    alert("게시글 저장 실패!");
+    alert(`게시글 저장 실패! 오류: ${responseData.error}`);
   }
 }
 
 // 📌 서버에서 게시글 수정하기 (updated_at 반영)
 async function updatePost(postId) {
+  const user_id = await checkAuth(); // ✅ 로그인 체크 추가
+  if (!user_id) return; // ✅ 로그인되지 않으면 함수 종료
+
   const title = document.getElementById(`edit-title-${postId}`).value;
   const content = document.getElementById(`edit-content-${postId}`).value;
-  const imageFile = document.getElementById(`edit-image-${postId}`).files[0]; // 새 이미지 선택 여부
-  const currentImage = document.getElementById(`current-image-${postId}`); // 기존 이미지
+  const imageFile = document.getElementById(`edit-image-${postId}`).files[0];
 
-  let imageUrl = currentImage ? currentImage.src : null; // 기본적으로 기존 이미지 유지
-
-  // 📌 1️⃣ 기존 이미지 삭제 후 새로운 이미지 업로드
-  if (!imageFile && !currentImage) {
-    // 이미지를 삭제한 경우, Supabase에서 기존 URL을 null로 업데이트
-    await fetch(`${API_URL}/posts/${postId}/image`, { method: "DELETE" });
-    imageUrl = null;
-  }
-
-  // 📌 2️⃣ 새 이미지 업로드 (Base64 변환 후 저장)
+  let imageUrl =
+    document.getElementById(`current-image-${postId}`)?.src || null;
   if (imageFile) {
-    imageUrl = await convertToBase64(imageFile); // Base64 변환
+    imageUrl = await convertToBase64(imageFile);
   }
 
-  // 📌 3️⃣ 서버에 게시글 업데이트 요청
   const response = await fetch(`${API_URL}/posts/${postId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -201,30 +219,25 @@ async function updatePost(postId) {
   });
 
   if (response.ok) {
-    loadPosts(); // ✅ 게시글 목록 다시 불러오기
+    loadPosts();
   } else {
     alert("게시글 수정 실패!");
   }
 }
 
 async function deleteImage(postId) {
-  if (!confirm("이미지를 삭제하시겠습니까?")) return;
+  const user_id = await checkAuth(); // ✅ 로그인 체크 추가
+  if (!user_id) return; // ✅ 로그인되지 않으면 함수 종료
+
+  const confirmDelete = confirm("이미지를 삭제하시겠습니까?");
+  if (!confirmDelete) return;
 
   const response = await fetch(`${API_URL}/posts/${postId}/image`, {
     method: "DELETE",
   });
 
   if (response.ok) {
-    alert("이미지가 삭제되었습니다!");
-
-    // 📌 UI에서 이미지 즉시 제거
-    const imageElement = document.getElementById(`current-image-${postId}`);
-    if (imageElement) {
-      imageElement.remove();
-    }
-
-    // 📌 전체 게시글 다시 불러오기
-    loadPosts(); // ✅ 최신 상태로 갱신
+    loadPosts();
   } else {
     alert("이미지 삭제 실패!");
   }
@@ -232,11 +245,21 @@ async function deleteImage(postId) {
 
 // 📌 서버에서 게시글 삭제하기
 async function deletePost(postId) {
-  if (!confirm("정말 삭제하시겠습니까?")) return; // 확인 창 추가
+  const user_id = await checkAuth(); // ✅ 로그인 체크 추가
+  if (!user_id) return; // ✅ 로그인되지 않으면 함수 종료
 
-  await fetch(`${API_URL}/posts/${postId}`, { method: "DELETE" });
+  const confirmDelete = confirm("정말로 삭제하시겠습니까?");
+  if (!confirmDelete) return;
 
-  loadPosts(); // 삭제 후 다시 게시글 불러오기
+  const response = await fetch(`${API_URL}/posts/${postId}`, {
+    method: "DELETE",
+  });
+
+  if (response.ok) {
+    loadPosts();
+  } else {
+    alert("게시글 삭제 실패!");
+  }
 }
 
 // 📌 특정 게시글의 댓글 불러오기
@@ -260,22 +283,33 @@ async function loadComments(board_id) {
 
 // 📌 댓글 추가하기
 async function addComment(board_id) {
-  const input = document.getElementById(`comment-input-${board_id}`);
-  const content = input.value.trim();
+  const user_id = await checkAuth(); // ✅ 로그인 체크
+  if (!user_id) return; // ✅ 로그인되지 않으면 함수 종료
+
+  const commentInput = document.getElementById(`comment-input-${board_id}`);
+  const content = commentInput.value.trim();
   if (!content) return;
 
-  await fetch(`${API_URL}/comments`, {
+  const response = await fetch(`${API_URL}/comments`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ board_id, content }),
   });
 
-  input.value = ""; // 입력 필드 초기화
-  loadComments(board_id); // 다시 불러오기
+  const responseData = await response.json();
+  console.log("📌 API 응답:", responseData); // ✅ API 응답 확인
+
+  if (response.ok) {
+    loadComments(board_id);
+  } else {
+    alert(`댓글 작성 실패! 오류: ${responseData.error}`);
+  }
 }
 
 // 📌 서버에서 댓글 수정하기
 async function updateComment(commentId, board_id) {
+  const user_id = await checkAuth(); // ✅ 로그인 체크 추가
+  if (!user_id) return; // ✅ 로그인되지 않으면 함수 종료
   const contentInput = document.getElementById(`edit-comment-${commentId}`);
 
   const newContent = contentInput.value.trim();
@@ -292,6 +326,8 @@ async function updateComment(commentId, board_id) {
 
 // 📌 댓글 삭제하기
 async function deleteComment(commentId, board_id) {
+  const user_id = await checkAuth(); // ✅ 로그인 체크 추가
+  if (!user_id) return; // ✅ 로그인되지 않으면 함수 종료
   await fetch(`${API_URL}/comments/${commentId}`, { method: "DELETE" });
   loadComments(board_id); // 다시 불러오기
 }
